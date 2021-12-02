@@ -15,7 +15,7 @@ def time_synced():
     for line in cmd_output.split('\n'):
        if ("System clock" in line) and ("yes" in line):
             return True
-    
+
     return False
 
 def now_as_nsecs():
@@ -37,9 +37,9 @@ def get_timestamp(config_vars):
 
     elif config_vars['time_format'] == "splunk":
         return now_as_secs()
-    
+
     elif config_vars['time_format'] == "influxdb2":
         return now_as_msecs()
-    
+
     else:
         return now_as_secs()

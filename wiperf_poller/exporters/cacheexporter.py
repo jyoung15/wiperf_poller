@@ -39,8 +39,8 @@ class CacheExporter(object):
         self.day_dir_name = ''
 
         self.cache_checks_completed = False
-    
-    
+
+
     def _check_cache_day_dir_exists(self):
         """
         Check if today's dir exists
@@ -62,11 +62,11 @@ class CacheExporter(object):
         Create today's cache dir
         """
 
-        try: 
-            os.makedirs(self.day_dir_name, exist_ok = True) 
+        try:
+            os.makedirs(self.day_dir_name, exist_ok = True)
             self.file_logger.debug("Created cache file for day: {}".format(self.day_dir_name))
-        except OSError as e: 
-            self.file_logger.error("Cannot create day dir for today's cache files: {} ({})".format(self.day_dir_name, e.strerror)) 
+        except OSError as e:
+            self.file_logger.error("Cannot create day dir for today's cache files: {} ({})".format(self.day_dir_name, e.strerror))
             return False
         return True
 
@@ -93,7 +93,7 @@ class CacheExporter(object):
                 except OSError as e:
                     self.file_logger.error("Unable to remove cache directory tree: {} ({})".format(full_dir_name, e.strerror))
                     return False
-        
+
         return True
 
 
@@ -113,7 +113,7 @@ class CacheExporter(object):
             except IOError as err:
                 self.file_logger.error("JSON I/O file read error: {}".format(err))
                 return False
-            
+
             file_data.append(dict_data)
         else:
             # no file, so prepare to write initial data
@@ -126,10 +126,10 @@ class CacheExporter(object):
         except IOError as err:
                 self.file_logger.error("JSON I/O update error: {}".format(err))
                 return False
-        
+
         return True
 
-    
+
     def _dump_csv_data(self, data_file, dict_data, column_headers):
         """
         Dump the results data in today's csv file
@@ -149,7 +149,7 @@ class CacheExporter(object):
         except IOError as err:
             self.file_logger.error("CSV I/O error: {}".format(err))
             return False
-        
+
         return True
 
 
@@ -177,13 +177,13 @@ class CacheExporter(object):
                 # create it if required
                 if not self._create_cache_day_dir():
                     return False
-            
+
             # prune old cache dirs if required (exceeded retention policy)
             if not self._prune_cache_dirs():
                 return False
 
             self.cache_checks_completed = True
-        
+
         # dump data in configured format
         if self.data_format == 'json':
             data_file = self.day_dir_name + "/" + data_file + ".json"
@@ -192,10 +192,6 @@ class CacheExporter(object):
         elif self.data_format == 'csv':
             data_file = self.day_dir_name + "/" + data_file + ".csv"
             self._dump_csv_data(data_file, dict_data, column_headers)
-        
+
         else:
             self.file_logger.error("Unknown data format parameter supplied: {}".format(self.data_format))
-
-
-
-

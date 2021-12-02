@@ -30,4 +30,4 @@ def FileLogger(log_file, error_log_file):
     file_handler.setLevel(logging.ERROR)
     logger.addHandler(file_handler)
 
-    return logger    
+    return logger

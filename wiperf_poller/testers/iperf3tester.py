@@ -2,7 +2,7 @@
 Functions to perform iperf3 tcp & udp tests and return a number of result characteristics
 
 Note this originally used the iperf3 python module, but there were many issuse with the
-jitter stats in the udp test, so I decided to use my own wrapper around the iperf 
+jitter stats in the udp test, so I decided to use my own wrapper around the iperf
 program itself, which returns results in json format with no issues.
 '''
 import os
@@ -56,8 +56,8 @@ class IperfTester(object):
 
     def calculate_mos(self, rtt_avg_ms, jitter_ms, lost_percent):
         """
-        Calculation of approximate MOS score 
-        (This was kindly contributed by Mario Gingras, based on this 
+        Calculation of approximate MOS score
+        (This was kindly contributed by Mario Gingras, based on this
         article: https://netbeez.net/blog/impact-of-packet-loss-jitter-and-latency-on-voip/)
 
         Returns:
@@ -79,7 +79,7 @@ class IperfTester(object):
             mos_score = 1 + 0.035*R + 0.000007*R*(R-60)*(100-R)
         else:
             mos_score=4.5
-        
+
         return mos_score
 
     @timeout_decorator.timeout(60, use_signals=False)
@@ -131,7 +131,7 @@ class IperfTester(object):
                 config_vars['test_issue'] = True
                 config_vars['test_issue_descr'] = "TCP iperf test failure (routing issue)"
                 return False
-        
+
         # run iperf test
         result = False
         try:
@@ -170,8 +170,8 @@ class IperfTester(object):
                 return False
         else:
             self.file_logger.error("iperf3 tcp test failed.")
-            return False        
-                       
+            return False
+
     def run_udp_test(self, config_vars, status_file_obj, check_correct_mode_interface, exporter_obj):
 
         duration = int(config_vars['iperf3_udp_duration'])
@@ -199,7 +199,7 @@ class IperfTester(object):
         # Run a ping to the iperf server to get an rtt to feed in to MOS score calc
         ping_obj = PingTester(self.file_logger, platform=self.platform)
         ping_obj.ping_host(server_hostname, 1) # one ping to seed arp cache
-        
+
         ping_result = ping_obj.ping_host(server_hostname, 5)
 
         # ping results
@@ -216,7 +216,7 @@ class IperfTester(object):
             self.file_logger.error("UDP iperf3 test process timed out")
 
         if result:
-            
+
             results_dict = {}
 
             results_dict['time'] = get_timestamp(config_vars)

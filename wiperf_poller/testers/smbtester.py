@@ -49,7 +49,7 @@ class SmbTester(object):
             return False
 
         return True
-    
+
     def _already_mounted(self, host, path):
 
         full_path = "//{}{}".format(host, path)
@@ -68,12 +68,12 @@ class SmbTester(object):
             error = "Hit an error with mount command: {}".format(output)
             self.file_logger.error(error)
             return False
-        
+
         # check if already mounted
         for line in mount_output:
             if full_path in line:
                 return True
-        
+
         return False
 
     def _mount_volume(self, host, path, mount_point, username, password):
@@ -90,7 +90,7 @@ class SmbTester(object):
         Returns:
             [bool]: False = failed, True = success
         """
-        # Mount a volume      
+        # Mount a volume
         try:
             self.file_logger.info("Mounting remote volume...")
             cmd_string = "{} //{}{} {} -o user={},password=\'{}\'".format(SMB_MOUNT, host, path, mount_point, username, password)
@@ -109,7 +109,7 @@ class SmbTester(object):
         self.file_logger.debug(smb_output)
 
         return True
-    
+
     def _unmount_volume(self, host, path, silent=False):
         """
         Unmount a previously mounted volume
@@ -118,7 +118,7 @@ class SmbTester(object):
             mount_point (str): Folder name of local mount point
             host (str): Name or IP of remote host
             path (str): path of remote mounted path
-            silent (bool, optional): Attempt unmount silently (no logs) - useful if require a 
+            silent (bool, optional): Attempt unmount silently (no logs) - useful if require a
                     blind unmount in case previous test failed and volume left mounted. Defaults to False.
 
         Returns:
@@ -131,7 +131,7 @@ class SmbTester(object):
         try:
             if not silent:
                 self.file_logger.info("Unmounting volume...")
-            
+
             cmd_string = "{} {}".format(UMOUNT_CMD, smb_full_path)
             self.file_logger.debug("Unmount command: {}".format(cmd_string))
 
@@ -153,8 +153,8 @@ class SmbTester(object):
     @timeout_decorator.timeout(60, use_signals=False)
     def smb_copy(self, host, filename, path, username, password, smb_timeout=1):
         '''
-        This function will run mount a SMB volume and copy a file from it to the local 
-        directory, time and transfer rate will be calculated 
+        This function will run mount a SMB volume and copy a file from it to the local
+        directory, time and transfer rate will be calculated
 
         If the Smb fails, a False condition is returned with no further
         information. If the Smb succeeds, the following dictionary is returned:
@@ -171,7 +171,7 @@ class SmbTester(object):
         self.file_logger.debug("SMB mount: " + str(host) + " share " + str(path))
 
         # Copy file to the SMB mounted volume
-        self.file_logger.debug("SMB copy: " + str(filename)) 
+        self.file_logger.debug("SMB copy: " + str(filename))
         try:
             self.file_logger.info("Copying file to mounted volume...")
             cmd_string = "{} -f {}/{} ~/.".format(SMB_CP, self.mount_point, filename)
@@ -185,7 +185,7 @@ class SmbTester(object):
             output = exc.output.decode()
             error = "Hit an error with SMB copy {} : {}".format(str(host), str(output))
             self.file_logger.error(error)
-        
+
         # Perform various calcs prior to returning results
         self.time_to_transfer = end_time-start_time
 
@@ -214,10 +214,10 @@ class SmbTester(object):
         self.file_logger.info("Checking we have required software packages for these tests")
 
         packages = {
-            'smb copy': SMB_CP, 
-            'smb mount': SMB_MOUNT, 
-            'mount': MOUNT, 
-            'ls': LS_CMD, 
+            'smb copy': SMB_CP,
+            'smb mount': SMB_MOUNT,
+            'mount': MOUNT,
+            'ls': LS_CMD,
             'umount': UMOUNT_CMD
         }
         for package_name, package_installed in packages.items():
@@ -278,7 +278,7 @@ class SmbTester(object):
                     config_vars['test_issue'] = True
                     config_vars['test_issue_descr'] = "SMB test failure (routing issue)"
                     tests_passed = False
-                    break               
+                    break
 
             # create mount point if does not exist
             if not os.path.exists(self.mount_point):
@@ -289,7 +289,7 @@ class SmbTester(object):
                     continue
                 else:
                     self.file_logger.info("Created mount point OK")
-            
+
             # check if a volume already mounted to mount point, unmount if it is
             if self._already_mounted(smb_host, path):
                 self.file_logger.info("Path already mounted")
@@ -298,9 +298,9 @@ class SmbTester(object):
                 if not self._unmount_volume(smb_host, path):
                     self.file_logger.error("Unable to unmount existing mount.")
                     tests_passed = False
-                    continue 
+                    continue
                 else:
-                    self.file_logger.info("Unmounted OK")      
+                    self.file_logger.info("Unmounted OK")
 
             # SMB mount the remote volume
             if not self._mount_volume(smb_host, path, self.mount_point, smb_username, smb_password):
@@ -316,12 +316,12 @@ class SmbTester(object):
                 smb_result=self.smb_copy(smb_host, filename, path, smb_username, smb_password, 1)
             except:
                 self.file_logger.error("SMB copy process timed out.")
-            
+
             # Unmount the volume
             if not self._unmount_volume(smb_host, path):
                 self.file_logger.warning("Unmount failed.")
             else:
-                self.file_logger.info("Unmounted OK") 
+                self.file_logger.info("Unmounted OK")
 
             # Send SMB results to exporter
             if smb_result:
@@ -334,7 +334,7 @@ class SmbTester(object):
 
                 # define column headers for CSV
                 column_headers = list(results_dict.keys())
-                
+
                 # dump the results
                 data_file = config_vars['smb_data_file']
                 test_name = "SMB"
@@ -350,17 +350,25 @@ class SmbTester(object):
 
                 self.file_logger.debug("Main: SMB test results:")
                 self.file_logger.debug(smb_result)
-                
+
                 # signal that at least one test passed
                 all_tests_fail = False
 
             else:
                 self.file_logger.error("SMB test failed.")
                 tests_passed = False
-            
+
         # if all tests fail, and there are more than 2 tests, signal a possible issue
         if all_tests_fail and (smb_index > 1):
             self.file_logger.error("Looks like quite a few SMB tests failed, incrementing watchdog.")
             watchd.inc_watchdog_count()
-        
+
         return tests_passed
+
+    @staticmethod
+    def get_tag_keys():
+        ''' Values to treat as tags in Influx '''
+        return (
+            'smb_host',
+            'filename',
+        )

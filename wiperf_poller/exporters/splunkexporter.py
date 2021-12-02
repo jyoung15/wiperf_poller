@@ -26,9 +26,9 @@ class SplunkExporter(object):
         self.secure = secure
 
         self.hostname = socket.gethostname()
-        
+
         self.file_logger = file_logger
-  
+
 
     def _url_generator(self, path='/'):
 
@@ -37,7 +37,7 @@ class SplunkExporter(object):
         if self.secure:
             scheme = 'https'
 
-        if is_ipv6(self.host): 
+        if is_ipv6(self.host):
             self.host = "[{}]".format(self.host)
 
         url = "{}://{}:{}{}".format(scheme, self.host, self.port, path)
@@ -56,7 +56,7 @@ class SplunkExporter(object):
             output = exc.output.decode()
             self.file_logger.error("Port check to Splunk server failed. Err msg: {}".format(str(output)))
             return False
-    
+
     def ping_http_port(self):
 
         self.file_logger.debug('Checking for http(s) reponse on port: {}'.format(self.port))
@@ -80,7 +80,7 @@ class SplunkExporter(object):
 
         except Exception as err:
             self.file_logger.error('http error occurred: {}'.format(err))
-        
+
         return False
 
     def check_token(self):
@@ -88,10 +88,10 @@ class SplunkExporter(object):
         # stop errors if using https
         if self.secure:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        
+
         url = self._url_generator(path='/services/collector/event')
 
-        token = self.token    
+        token = self.token
         headers = {'Authorization':'Splunk '+ token}
 
         # send auth request
@@ -107,7 +107,7 @@ class SplunkExporter(object):
         passed_auth = True
 
         self.file_logger.debug('Checking Splunk auth token is valid...')
-        
+
         if response_code == 400:
             self.file_logger.debug("Splunk token check: ok.")
         elif response_code in failed_auth_codes:
@@ -120,18 +120,18 @@ class SplunkExporter(object):
         if not passed_auth:
             self.file_logger.error("Splunk token check: Auth check to server failed.")
             return False
-        
+
         return True
-    
+
     def export_result(self, results_dict, source):
 
         # stop errors if using https
         if self.secure:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        
+
         url = self._url_generator(path='/services/collector/event')
 
-        token = self.token    
+        token = self.token
         headers = {'Authorization':'Splunk '+ token}
 
         # create event to send to Splunk
@@ -139,7 +139,7 @@ class SplunkExporter(object):
 
         if time_synced():
             event_data['time'] = results_dict['time']
-        
+
         json_event_data = json.dumps(event_data)
 
         # send results data
@@ -151,7 +151,7 @@ class SplunkExporter(object):
             return False
 
         response_code = response.status_code
-        
+
         if response_code == 200:
             self.file_logger.debug("Data sent OK.")
             return True

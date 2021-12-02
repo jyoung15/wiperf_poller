@@ -21,7 +21,7 @@ class LockFile(object):
 
         if os.path.exists(self.lock_file):
             return True
-        
+
         return False
 
     def read_lock_file(self):
@@ -40,9 +40,9 @@ class LockFile(object):
         time_now = time.time()
         if (time_now - int(lock_timestamp)) > 540:
             return True
-        
+
         return False
-    
+
 
     def write_lock_file(self):
         try:
@@ -55,7 +55,7 @@ class LockFile(object):
             sys.exit()
 
     def break_lock(self):
-        
+
         time_now = int(time.time())
         lock_timestamp = self.read_lock_file()
         self.file_logger.error("Current time: {}, lock file time: {}".format(time_now, lock_timestamp))
@@ -69,4 +69,3 @@ class LockFile(object):
         except Exception as ex:
             self.file_logger.error("Issue deleting lock file: {}, exiting...".format(ex))
             sys.exit()
-

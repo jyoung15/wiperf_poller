@@ -157,7 +157,7 @@ class PingTester(object):
                 ping_hosts.append(ping_host)
 
         ping_count = config_vars['ping_count']
-      
+
         tests_passed = True
 
         # initial ping to populate arp cache and avoid arp timeput for first test ping
@@ -232,19 +232,19 @@ class PingTester(object):
 
                 self.file_logger.debug("Main: Ping test results:")
                 self.file_logger.debug(ping_result)
-                
+
                 # signal that at least one test passed
                 all_tests_fail = False
 
             else:
                 self.file_logger.error("Ping test failed.")
                 tests_passed = False
-            
+
         # if all tests fail, and there are more than 2 tests, signal a possible issue
         if all_tests_fail and (ping_index > 1):
             self.file_logger.error("Looks like quite a few pings failed, incrementing watchdog.")
             watchd.inc_watchdog_count()
-        
+
         return tests_passed
 
     def get_host(self):
@@ -283,3 +283,9 @@ class PingTester(object):
         ''' Get the median round trip time observed during the test '''
         return self.rtt_mdev
 
+    @staticmethod
+    def get_tag_keys():
+        ''' Values to treat as tags in Influx '''
+        return (
+            'ping_host',
+        )

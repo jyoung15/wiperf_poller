@@ -12,7 +12,7 @@ import datetime
 
 class AuthTester(object):
     '''
-    A class to perform a wifi authentication disconnect and reconnect and measure time to connect- a basic 
+    A class to perform a wifi authentication disconnect and reconnect and measure time to connect- a basic
     wrapper around a CLI WPA-CLI command
     '''
 
@@ -44,13 +44,13 @@ class AuthTester(object):
 
             # Things have gone bad - we just return a false status
             return False
-        
+
         self.file_logger.debug("wpa_cli disconnect:")
         self.file_logger.debug(auth_output)
 
         # Execute reconnect
         self.file_logger.info("Reconnecting...")
-        self.file_logger.debug("wpa_cli reconnect: ") 
+        self.file_logger.debug("wpa_cli reconnect: ")
         try:
             cmd_string = "{} reconnect".format(WPA_CMD)
             auth_output = subprocess.check_output(cmd_string, stderr=subprocess.STDOUT, shell=True).decode().splitlines()
@@ -74,15 +74,15 @@ class AuthTester(object):
             error = "Hit an error with grep of daemon.log : {}".format( str(output))
             self.file_logger.error(error)
             return False
-    
+
         try:
             start_date_time = datetime.datetime.strptime(result[0] + " " + result[1], '%Y-%m-%d %H:%M:%S.%f')
         except:
             self.file_logger.error("""
-    
-    Conversion of timestamp failed. Have you applied the recommended update to the 
+
+    Conversion of timestamp failed. Have you applied the recommended update to the
     log format of rsyslog:
-    
+
     - Rsyslogd must log with rfc3339 date format.
     - modify /etc/rsyslogd.conf with the following line
     - Comment out the line $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
@@ -137,15 +137,15 @@ class AuthTester(object):
             if exporter_obj.send_results(config_vars, results_dict, column_headers, data_file, test_name, self.file_logger, delete_data_file=delete_file):
                 self.file_logger.info("Time to authenticate test ended.")
                 tests_passed = True
-            else:                    
+            else:
                 self.file_logger.error("Issue sending time to authenticate results.")
                 tests_passed = False
-            
+
             # Make sure we don't delete data file next time around
             delete_file = False
             self.file_logger.debug("Main: time to authenticate results:")
-            self.file_logger.debug(test_result)    
-        
+            self.file_logger.debug(test_result)
+
         else:
             self.file_logger.error("Time to authenticate test failed.")
             tests_passed = False

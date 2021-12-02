@@ -67,7 +67,7 @@ class HttpTester(object):
 
         # return status code & elapsed duration in mS
         return (self.http_status_code, self.http_get_duration, self.http_server_response_time)
-    
+
     def run_tests(self, status_file_obj, config_vars, exporter_obj, watchd, check_correct_mode_interface,):
 
         self.file_logger.info("Starting HTTP tests...")
@@ -75,7 +75,7 @@ class HttpTester(object):
 
         # build targets list
         http_targets = []
-        
+
         # get specifed number of targets (format: 'http_target1')
         num_http_targets = int(config_vars['http_targets_count']) + 1
 
@@ -171,7 +171,7 @@ class HttpTester(object):
         if all_tests_fail and (http_index > 1):
             self.file_logger.error("Looks like quite a few http tests failed, incrementing watchdog.")
             watchd.inc_watchdog_count()
-        
+
         return tests_passed
 
     def get_http_duration(self):
@@ -185,3 +185,10 @@ class HttpTester(object):
     def get_status_code(self):
         ''' Get http status code '''
         return self.http_status_code
+
+    @staticmethod
+    def get_tag_keys():
+        ''' Values to treat as tags in Influx '''
+        return (
+            'http_target',
+        )

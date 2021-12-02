@@ -59,7 +59,7 @@ class MgtConnectionTester(object):
             # check our token is valid
             payload = dict()
             response = dict()
-            token = self.config_vars.get('splunk_token')    
+            token = self.config_vars.get('splunk_token')
             headers = {'Authorization':'Splunk '+ token}
             if is_ipv6(data_host): data_host = "[{}]".format(data_host)
             url = "https://{}:{}/services/collector/event".format(data_host, data_port)
@@ -70,7 +70,7 @@ class MgtConnectionTester(object):
 
             failed_auth_codes = [401, 403]
             passed_auth = True
-            
+
             if response_code == 400:
                 self.file_logger.info("Splunk token check: ok.")
             elif response_code in failed_auth_codes:
@@ -83,9 +83,9 @@ class MgtConnectionTester(object):
             if not passed_auth:
                 self.file_logger.error("Splunk token check: Auth check to server failed. (Exiting...)")
                 return False
-            
+
             return True
-        
+
         elif exporter_type == 'influxdb':
             self.file_logger.info("  Checking port connection to InfluxDB server {}, port: {}".format(data_host, data_port))
 
@@ -113,9 +113,7 @@ class MgtConnectionTester(object):
                 return False
 
             return True
-        
+
         else:
             self.file_logger.info("  Unknown exporter type configured in config.ini: {} (exiting)".format(exporter_type))
             sys.exit()
-
-

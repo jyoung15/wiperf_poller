@@ -1,4 +1,3 @@
-
 #from ipv4_module import Ipv4 as Printer
 #from ipv6_module import Ipv6 as Printer
 

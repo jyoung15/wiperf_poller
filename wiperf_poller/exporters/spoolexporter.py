@@ -39,7 +39,7 @@ class SpoolExporter(object):
         self.config_vars = config_vars
 
         self.spool_checks_completed = False
-    
+
     def check_spool_dir_exists(self):
         """
         Check if root cache dir exists (by default /var/spool/wiperf)
@@ -55,14 +55,14 @@ class SpoolExporter(object):
         Create spool root dir
         """
 
-        try: 
-            os.makedirs(self.spool_dir_root, exist_ok = True) 
+        try:
+            os.makedirs(self.spool_dir_root, exist_ok = True)
             self.file_logger.debug("Created spooling root dir: {}".format(self.spool_dir_root))
-        except OSError as e: 
-            self.file_logger.error("Cannot create spooling root dir: {} ({})".format(self.spool_dir_root, e.strerror)) 
+        except OSError as e:
+            self.file_logger.error("Cannot create spooling root dir: {} ({})".format(self.spool_dir_root, e.strerror))
             return False
         return True
-    
+
     def list_spool_files(self):
 
         # list files in spool dir (sorted by name a->z)
@@ -71,18 +71,18 @@ class SpoolExporter(object):
 
         return spool_files
 
-    
+
     def prune_old_files(self):
         """
         Remove files older than max_age policy
         """
-     
+
         self.file_logger.info("Checking for files to prune.")
 
         if not self.check_spool_dir_exists():
             self.file_logger.info("Spool dir does not exist yet.")
             return True
-        
+
         file_list = self.list_spool_files()
 
         if not file_list:
@@ -91,7 +91,7 @@ class SpoolExporter(object):
 
         # determine cut-off time for files as per max-age policy
         age_limit = datetime.now() - timedelta(minutes=self.spool_max_age)
-        
+
         prune_count = 0
         for filename in file_list:
 
@@ -103,9 +103,9 @@ class SpoolExporter(object):
             else:
                 # As soon as we hit a file within policy, exit
                 break
-        
+
         self.file_logger.info("Files pruned: {}".format(prune_count))
-        
+
         return True
 
 
@@ -120,7 +120,7 @@ class SpoolExporter(object):
         except IOError as err:
                 self.file_logger.error("JSON I/O update error: {}".format(err))
                 return False
-        
+
         return True
 
 
@@ -135,7 +135,7 @@ class SpoolExporter(object):
         # if we get here and the exporter is not set to spooler, must have had
         # issue sending result to reporting server, try to spool it
         if config_vars['exporter_type'] != 'spooler':
-        
+
             if self.spool_enabled == 'yes':
                 self.file_logger.info("Spooling result as looks like an issue sending to reporting server.")
             else:
@@ -143,14 +143,14 @@ class SpoolExporter(object):
                 return False
 
         elif not self.spool_enabled == 'yes':
-            # to get here, exporter must have been changed to spooler due to comms issue at start 
+            # to get here, exporter must have been changed to spooler due to comms issue at start
             # of poller checks. If spooling not enabled, increment watchdog, remove lock file & exit
             # as no point in continuing as no way of saving results.
             self.file_logger.error("Result spooling not enabled - Exiting.")
             watchdog_obj.inc_watchdog_count()
             lockf_obj.delete_lock_file()
             sys.exit()
-        
+
         # Do not allow spooling if probe is not time sync'ed - historical
         # data timestamps will be meaningless
         if not time_synced():
@@ -171,20 +171,15 @@ class SpoolExporter(object):
                 if not self._create_spool_dir():
                     self.file_logger.error("Unable to spool results data as spool root dir cannot be created: {}".format(self.spool_dir_root))
                     return False
-            
+
             self.spool_checks_completed = True
-        
+
         # add data source to results
         dict_data['data_source'] = data_file
-        
+
         # derive spool filename in format YYYY-MM-DD-HHMMSSmmm-<data source>.json
         file_timestamp = datetime.today().strftime("%Y-%m-%d-%H%M%S.%f")[:-3]
         data_file = "{}/{}-{}.json".format(self.spool_dir_root, file_timestamp, data_file)
 
         # dump data in to json format file
         return self._dump_json_data(data_file, dict_data)
-
-
-
-
-

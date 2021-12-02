@@ -53,7 +53,7 @@ class DhcpTester(object):
         """
 
         self.interface = interface
-            
+
         start = 0.0
         end = 0.0
 
@@ -69,20 +69,20 @@ class DhcpTester(object):
                 self.file_logger.debug("dhcp: {}".format(line.decode().strip()))
                 if b'DHCPACK' in line:
                     break
-                
+
                 # If we get here, DHCP ACK not seen - issue warning
                 if not line:
                     self.file_logger.warning("dhcp: DHCP ACK not detected in renewal output.")
                     break
 
-            end = time.time()          
+            end = time.time()
             self.file_logger.info("Address renewed.")
 
             try:
                 subprocess.check_output("pkill -9 -f 'dhclient.pid'", shell=True)
             except subprocess.CalledProcessError as exc:
                 self.file_logger.info("Output from zombie processes kill: {}".format(exc))
-        
+
         except Exception as ex:
             self.file_logger.error("Issue renewing IP address: {}".format(ex))
 
@@ -133,7 +133,7 @@ class DhcpTester(object):
         else:
             self.file_logger.error("DHCP test error - no results (check logs)")
             tests_passed = False
-    
+
         return tests_passed
 
     def get_duration(self):

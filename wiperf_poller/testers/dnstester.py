@@ -55,7 +55,7 @@ class DnsTester(object):
         self.file_logger.debug("DNS lookup for: {} succeeded.".format(target))
 
         return self.dns_result
-    
+
     def run_tests(self, status_file_obj, config_vars, exporter_obj):
 
         self.file_logger.info("Starting DNS tests...")
@@ -63,7 +63,7 @@ class DnsTester(object):
 
         # build targets list
         dns_targets = []
-        
+
         # get specifed number of targets (format: 'dns_target1')
         num_dns_targets = int(config_vars['dns_targets_count']) + 1
 
@@ -126,3 +126,10 @@ class DnsTester(object):
     def get_dns_result(self):
         ''' Get DNS single lookup result '''
         return self.dns_result
+
+    @staticmethod
+    def get_tag_keys():
+        ''' Values to treat as tags in Influx '''
+        return (
+            'dns_target',
+        )

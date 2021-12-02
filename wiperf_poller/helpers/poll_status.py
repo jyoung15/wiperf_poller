@@ -35,43 +35,43 @@ class PollStatus():
 
     def ip(self, value):
         self.status_dict['ip'] = str(value)
-    
+
     def network(self, value):
         self.status_dict['network'] = str(value)
 
     def speedtest(self, value):
         self.status_dict['speedtest'] = str(value)
-    
+
     def ping(self, value):
         self.status_dict['ping'] = str(value)
 
     def dns(self, value):
         self.status_dict['dns'] = str(value)
-    
+
     def http(self, value):
         self.status_dict['http'] = str(value)
-    
+
     def iperf_tcp(self, value):
         self.status_dict['iperf_tcp'] = str(value)
-    
+
     def iperf_udp(self, value):
         self.status_dict['iperf_udp'] = str(value)
-    
+
     def dhcp(self, value):
         self.status_dict['dhcp'] = str(value)
-    
+
     def smb(self, value):
         self.status_dict['smb'] = str(value)
-    
+
     def auth(self, value):
         self.status_dict['auth'] = str(value)
-    
+
     def probe_mode(self, value):
         self.status_dict['probe_mode'] = str(value)
-    
+
     def mgt_if(self, value):
         self.status_dict['mgt_if'] = str(value)
-    
+
     def dump(self, exporter_obj):
 
         # calc run time
@@ -94,6 +94,3 @@ class PollStatus():
         else:
             self.file_logger.error("Issue sending poll status info.")
             return False
-
-
-    

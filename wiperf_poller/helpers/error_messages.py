@@ -23,7 +23,7 @@ class ErrorMessages():
     def dump(self, exporter_obj):
 
         self.file_logger.info("####### poll error messages #######")
-        
+
 
         # check if we have an error log
         if os.path.isfile(self.error_log_file):
@@ -35,14 +35,14 @@ class ErrorMessages():
             except Exception as ex:
                 self.file_logger.error("Issue reading error_msg file: {}, abandoning operation.".format(ex))
                 return False
-            
+
             # filter out log file lines that don't start with date
             message_list = []
 
             for line in lines:
                 if re.search(r'^\d\d\d\d-\d\d-\d\d', line) :
                     message_list.append(line.strip()[:150])
-            
+
             if len(message_list) > 0:
                 self.file_logger.info("Sending poll error messages to mgt platform")
             else:
@@ -68,17 +68,9 @@ class ErrorMessages():
                 else:
                     self.file_logger.error("Issue sending error message info.")
                     return False
-            
+
             return True
 
         else:
             self.file_logger.error("No error log detected.")
             return True
-            
-
-
-
-        
-
-
-    

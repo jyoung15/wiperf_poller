@@ -89,7 +89,7 @@ class Bouncer(object):
                     # it's time to reboot
                     self.write_bounce_file(current_hour)
                     self.reboot()
-                
+
                 else:
                     self.file_logger.info("No.")
 

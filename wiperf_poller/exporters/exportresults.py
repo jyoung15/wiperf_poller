@@ -13,10 +13,18 @@ from wiperf_poller.exporters.influxexporter import influxexporter
 from wiperf_poller.exporters.spoolexporter import SpoolExporter
 from wiperf_poller.helpers.route import is_ipv6
 from wiperf_poller.exporters.cacheexporter import CacheExporter
+from wiperf_poller.testers import (
+    dnstester,
+    httptester,
+    pingtester,
+    smbtester,
+    speedtester,
+    wirelessconnectiontester,
+)
 
 class ResultsExporter(object):
     """
-    Class to implement universal resuts exporter for wiperf
+    Class to implement universal results exporter for wiperf
     """
 
     def __init__(self, file_logger, watchdog_obj, lockf_obj, spooler_obj, platform):
@@ -27,7 +35,13 @@ class ResultsExporter(object):
         self.lockf_obj = lockf_obj
         self.cache_obj = CacheExporter(file_logger)
         self.spooler_obj = spooler_obj
-    
+        self.influx_tags = dnstester.DnsTester.get_tag_keys() + \
+            wirelessconnectiontester.WirelessConnectionTester.get_tag_keys() + \
+            smbtester.SmbTester.get_tag_keys() + \
+            pingtester.PingTester.get_tag_keys() + \
+            speedtester.Speedtester.get_tag_keys() + \
+            httptester.HttpTester.get_tag_keys()
+
     def send_results_to_splunk(self, host, token, port, dict_data, file_logger, source):
 
         file_logger.info("Sending results event to Splunk: {} (dest host: {}, dest port: {})".format(source, host, port))
@@ -38,13 +52,13 @@ class ResultsExporter(object):
 
         file_logger.info("Sending results data to Influx host: {}, port: {}, database: {})".format(host, port, database))
         if is_ipv6(host): host = "[{}]".format(host)
-        return influxexporter(localhost, host, port, username, password, database, use_ssl, dict_data, source, file_logger)
-    
+        return influxexporter(localhost, host, port, username, password, database, use_ssl, dict_data, source, file_logger, self.influx_tags)
+
     def send_results_to_influx2(self, localhost, url, token, bucket, org, dict_data, source, file_logger):
 
         file_logger.info("Sending results data to Influx url: {}, bucket: {}, source: {})".format(url, bucket, source))
-        return influxexporter2(localhost, url, token, bucket, org, dict_data, source, file_logger)
-    
+        return influxexporter2(localhost, url, token, bucket, org, dict_data, source, file_logger, self.influx_tags)
+
     def send_results_to_spooler(self, config_vars, data_file, dict_data, file_logger):
 
         file_logger.info("Sending results data to spooler: {} (as mgt platform not available)".format(data_file))
@@ -66,16 +80,16 @@ class ResultsExporter(object):
             file_logger.info("Splunk update: {}, source={}".format(data_file, test_name))
             sent_ok = self.send_results_to_splunk(config_vars['data_host'], config_vars['splunk_token'], config_vars['data_port'],
                 results_dict, file_logger, data_file)
-        
+
         elif config_vars['exporter_type'] == 'influxdb':
-            
+
             file_logger.info("InfluxDB update: {}, source={}".format(data_file, test_name))
 
-            sent_ok = self.send_results_to_influx(gethostname(), config_vars['data_host'], config_vars['data_port'], 
+            sent_ok = self.send_results_to_influx(gethostname(), config_vars['data_host'], config_vars['data_port'],
                 config_vars['influx_username'], config_vars['influx_password'], config_vars['influx_database'], config_vars['influx_ssl'], results_dict, data_file, file_logger)
-        
+
         elif config_vars['exporter_type'] == 'influxdb2':
-            
+
             file_logger.info("InfluxDB2 update: {}, source={}".format(data_file, test_name))
 
             # construct url
@@ -86,12 +100,12 @@ class ResultsExporter(object):
 
             sent_ok = self.send_results_to_influx2(gethostname(), influx_url, config_vars['influx2_token'],
                     config_vars['influx2_bucket'], config_vars['influx2_org'], results_dict, data_file, file_logger)
-        
+
         elif config_vars['exporter_type'] == 'spooler':
 
             # Do nothing, but drop through to spooler export at end
             pass
-        
+
         else:
             file_logger.info("Unknown exporter type in config file: {}".format(config_vars['exporter_type']))
             self.lockf_obj.delete_lock_file()

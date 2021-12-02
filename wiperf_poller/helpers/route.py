@@ -1,4 +1,3 @@
-
 from socket import gethostbyname
 import subprocess
 import re
@@ -34,16 +33,16 @@ def resolve_name(hostname, file_logger):
         file_logger.error("  Issue looking up host {} (DNS Issue?): {}".format(hostname, ex))
         return False
 
-  
+
 def get_test_traffic_interface(config_vars, file_logger):
     """
     Return the interface name used for testing traffic, based on the probe mode
     """
     probe_mode = config_vars['probe_mode']
 
-    if probe_mode == "wireless": return config_vars['wlan_if'] 
-    if probe_mode == "ethernet": return config_vars['eth_if'] 
-        
+    if probe_mode == "wireless": return config_vars['wlan_if']
+    if probe_mode == "ethernet": return config_vars['eth_if']
+
     file_logger.error("  Unknown probe mode: {} (exiting)".format(probe_mode))
     sys.exit()
 
@@ -66,7 +65,7 @@ def get_first_ipv4_route_to_dest(ip_address, file_logger, ip_ver=''):
         output = exc.output.decode()
         file_logger.error("  Issue looking up route (route cmd syntax?): {} (command used: {})".format(str(output), ip_route_cmd))
         return ''
-        
+
 def get_first_ipv6_route_to_dest(ip_address, file_logger):
     """
     Check the routes to a specific ipv6 destination & return first entry
@@ -123,19 +122,19 @@ def check_correct_mgt_interface(mgt_host, mgt_interface, file_logger):
 
     if is_ipv4(mgt_ip): return check_correct_ipv4_mgt_interface(mgt_ip, mgt_interface, file_logger)
     if is_ipv6(mgt_ip): return check_correct_ipv6_mgt_interface(mgt_ip, mgt_interface, file_logger)
-    
+
     file_logger.error("  Unknown mgt IP address format '{}' mode.".format(mgt_ip))
     return False
 
 
 def check_correct_mode_interface(ip_address, config_vars, file_logger):
     """
-    This function checks whether we use the expected interface for testing traffic, 
+    This function checks whether we use the expected interface for testing traffic,
     depending on which mode the probe is operating.
 
     Modes:
         ethernet : we expect to get to the Internet over the eth interface (usually eth0)
-        wireless : we expect to get to the Internet over the WLAN interface (usually wlan0) 
+        wireless : we expect to get to the Internet over the WLAN interface (usually wlan0)
 
     args:
         ip_address: IP address of target out on the test domain (usually the Internet)
@@ -145,7 +144,7 @@ def check_correct_mode_interface(ip_address, config_vars, file_logger):
 
     # check test traffic will go via correct interface depending on mode
     test_traffic_interface= get_test_traffic_interface(config_vars, file_logger)
-    
+
     # get i/f name for route
     route_to_dest = get_first_ipv4_route_to_dest(ip_address, file_logger)
 
@@ -165,17 +164,17 @@ def inject_default_route(ip_address, config_vars, file_logger):
     Scenario:
 
     This function is called as it has been determined that the route used for
-    testing traffic is not the required interface. An attempt will be made to 
+    testing traffic is not the required interface. An attempt will be made to
     fix the routing by increasing the metric of the exsiting default route and
     then adding a new deault route that uses the interface required for testing
     (which will have a lower metrc and be used in preference to the original
     default route)
 
     Process flow:
-    
+
     1. Get route to the destination IP address
     2. If it's not a default route entry, we can't fix this, exit
-    3. Delete the existing default route 
+    3. Delete the existing default route
     4. Re-add the same default route with an metric increased to 500
     5. Figure out the interface over which testing traffic should be sent
     6. Add a new default route entry for that interface
@@ -184,14 +183,14 @@ def inject_default_route(ip_address, config_vars, file_logger):
     # get the default route to our destination
     route_to_dest = get_route_used_to_dest(ip_address, file_logger)
 
-    # This fix relies on the retrieved route being a default route in the 
+    # This fix relies on the retrieved route being a default route in the
     # format: default via 192.168.0.1 dev eth0
 
     if not "default" in route_to_dest:
         # this isn't a default route, so we can't fix this
         file_logger.error('  [Route Injection] Route is not a default route entry...cannot resove this routing issue: {}'.format(route_to_dest))
         return False
-  
+
     # delete and re-add route with a new metric
     try:
         del_route_cmd = "{} route del ".format(IP_CMD) + route_to_dest
@@ -200,7 +199,7 @@ def inject_default_route(ip_address, config_vars, file_logger):
     except subprocess.CalledProcessError as proc_exc:
         file_logger.error('  [Route Injection] Route deletion failed!: {}'.format(proc_exc))
         return False
-    
+
     try:
         modified_route = route_to_dest + " metric 500"
         add_route_cmd = "{} route add  ".format(IP_CMD) + modified_route
@@ -236,7 +235,7 @@ def _inject_static_route(ip_address, req_interface, traffic_type, file_logger, i
     routing issues for specific targets that will not be reached via
     the intended interface without the addition of this route.
 
-    A static route will be inserted in to the probe route table to send 
+    A static route will be inserted in to the probe route table to send
     matched traffic over a specific interface
     """
 
@@ -267,15 +266,15 @@ def inject_mgt_static_route(ip_address, config_vars, file_logger):
     """
     mgt_interface = config_vars['mgt_if']
 
-    if is_ipv6(ip_address): 
+    if is_ipv6(ip_address):
         return _inject_ipv6_static_route(ip_address, mgt_interface, "mgt", file_logger)
-    
+
     return _inject_static_route(ip_address, mgt_interface, "mgt", file_logger)
 
 
 def inject_test_traffic_static_route(ip_address, config_vars, file_logger):
     """
-    Inject a static route to correct routing issue for specific test traffic 
+    Inject a static route to correct routing issue for specific test traffic
     destination (e.g. iperf)
     """
     probe_mode = config_vars['probe_mode']
@@ -288,12 +287,6 @@ def inject_test_traffic_static_route(ip_address, config_vars, file_logger):
        if check_correct_mode_interface(ip_address, config_vars, file_logger):
 
            return True
-    
+
     # Something went wrong...
     return False
-
-
-
-
-
-

@@ -71,15 +71,15 @@ class WirelessConnectionTester(object):
             self.file_logger.error("  DNS seems to be failing, bouncing wireless interface. Err msg: {}".format(ex))
             watchdog_obj.inc_watchdog_count()
             self.adapter_obj.bounce_error_exit(lockf_obj)  # exit here
-        
+
         # check we are going to the Internet over the correct interface for ipv4 tests
         ip_address = gethostbyname(config_vars['connectivity_lookup'])
         if not check_correct_mode_interface_ipv4(ip_address, config_vars, self.file_logger):
 
             self.file_logger.warning("  We are not using the interface required to perform our tests due to a routing issue in this unit - attempt route addition to fix issue")
-            
+
             if inject_default_route_ipv4(config_vars['connectivity_lookup'], config_vars, self.file_logger):
-            
+
                 self.adapter_obj.bounce_interface()
                 self.file_logger.info("  Checking if route injection worked...")
 
@@ -90,15 +90,15 @@ class WirelessConnectionTester(object):
                     self.file_logger.warning("  Suggest making static routing additions or adding an additional metric to the interface causing the issue.")
                     lockf_obj.delete_lock_file()
                     sys.exit()
-        
+
         # check we are going to the Internet over the correct interface for ipv6 tests
         ip_address = gethostbyname(config_vars['connectivity_lookup_ipv6'])
         if not check_correct_mode_interface_ipv6(ip_address, config_vars, self.file_logger):
 
             self.file_logger.warning("  We are not using the interface required to perform our tests due to a routing issue in this unit - attempt route addition to fix issue")
-            
+
             if inject_default_route_ipv6(config_vars['connectivity_lookup'], config_vars, self.file_logger):
-            
+
                 self.adapter_obj.bounce_interface()
                 self.file_logger.info("  Checking if route injection worked (ipv6)...")
 
@@ -111,28 +111,28 @@ class WirelessConnectionTester(object):
                     sys.exit()
 
         # Check we can get to the mgt platform (function will exit script if no connectivity)
-        self.file_logger.info("Checking we can get to the management platform (host = {}, port = {}, type = {})".format(config_vars['data_host'], 
+        self.file_logger.info("Checking we can get to the management platform (host = {}, port = {}, type = {})".format(config_vars['data_host'],
             config_vars['data_port'], config_vars['exporter_type']))
-        
+
         mgt_connection_obj = MgtConnectionTester(config_vars, self.file_logger)
 
         # if we can't hit the mgt platform, set exporter to the local spooler if spooling enabled
         exit_msg = ''
 
-        if not mgt_connection_obj.check_connection(lockf_obj): 
-     
-            # Can't get to mgt platform - spooling enabled? 
+        if not mgt_connection_obj.check_connection(lockf_obj):
+
+            # Can't get to mgt platform - spooling enabled?
             if config_vars['results_spool_enabled'] == 'yes':
-                
+
                 # We have spooling enabled, are we time-sync'ed?
                 if not time_synced():
                     exit_msg = "Unable to reach mgt platform, unable to spool as probe not time sync'ed"
                 else:
                     config_vars['exporter_type'] = 'spooler'
-            
+
             else:
                 exit_msg = 'Unable to reach mgt platform, local spooling disabled - exiting'
-        
+
         if exit_msg:
             self.file_logger.warning(exit_msg)
             lockf_obj.delete_lock_file()
@@ -164,7 +164,7 @@ class WirelessConnectionTester(object):
         self.file_logger.info("########## Wireless Connection ##########")
         self.file_logger.info("Wireless connection data: SSID:{}, BSSID:{}, Freq:{}, Center Freq:{}, Channel: {}, Channel Width: {}, Tx Phy rate:{}, \
             Rx Phy rate:{}, Tx MCS: {}, Rx MCS: {}, RSSI:{}, Tx retries:{}, IP address:{}".format(
-            results_dict['ssid'], results_dict['bssid'], results_dict['freq_ghz'], results_dict['center_freq_ghz'], results_dict['channel'], 
+            results_dict['ssid'], results_dict['bssid'], results_dict['freq_ghz'], results_dict['center_freq_ghz'], results_dict['channel'],
             results_dict['channel_width'],  results_dict['tx_rate_mbps'], results_dict['rx_rate_mbps'], results_dict['tx_mcs'],
             results_dict['rx_mcs'], results_dict['signal_level_dbm'], results_dict['tx_retries'], results_dict['ip_address']))
         # dump the results

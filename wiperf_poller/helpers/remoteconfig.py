@@ -15,12 +15,12 @@ import time
 ####################################
 def anon_value(value):
     """
-    Turn value in to anonymous value to protect sensitve data that will 
-    be printed in log info 
+    Turn value in to anonymous value to protect sensitve data that will
+    be printed in log info
 
     Args:
         value (string): value to be anonymised
-    
+
     Return:
         Anonymised string
     """
@@ -41,7 +41,7 @@ def read_remote_cfg(config_file, check_cfg_file, config_vars, file_logger):
     cfg_username = config_vars['cfg_username']
     cfg_password = config_vars['cfg_password']
     cfg_text = ''
-    
+
     file_logger.debug("Trying to pull config file from URL: {}".format(cfg_file_url))
 
     # if we use a token, we need to set user/pwd to be token
@@ -69,7 +69,7 @@ def read_remote_cfg(config_file, check_cfg_file, config_vars, file_logger):
 
     if cfg_text:
         file_logger.info("Writing pulled config file to local config...")
-        try:   
+        try:
             with open(config_file, 'w') as f:
                 f.write(cfg_text)
             file_logger.info("Local config file written OK.")
@@ -87,11 +87,11 @@ def write_cfg_timestamp(check_cfg_file, file_logger):
     """
     Write current timestamp to cfg timestamp file
     """
-    
+
     time_now = str(int(time.time()))
-    
+
     file_logger.info("Writing current time to cfg timestamp file...")
-    try:   
+    try:
         with open(check_cfg_file, 'w') as f:
             f.write(time_now)
         file_logger.info("Written OK.")
@@ -120,7 +120,7 @@ def check_last_cfg_read(config_file, check_cfg_file, config_vars, file_logger):
     except Exception as e:
         file_logger.info("File read error: {}".format(e))
         return False
-    
+
     # if config file not read in last refresh interval, pull cfg file
     file_logger.debug("Checking time diff, time now: {}, last read time: {}".format(time_now, last_read_time))
 

@@ -20,7 +20,7 @@ class Speedtester(object):
     def librespeed(self, server_id='', args='', DEBUG=False):
         """
         This function runs the ookla speedtest and returns the result
-        as a dictionary: 
+        as a dictionary:
             {   download_rate_mbps = download_rate_mbps (float)
                 upload_rate_mbps = upload_rate_mbps (float)
                 ping_time = ping_time (int)
@@ -32,7 +32,7 @@ class Speedtester(object):
             }
 
         Speedtest result format:
-            {   
+            {
                 "timestamp":"2020-12-29T05:48:10.143697357Z",
                 "server":{
                     "name":"Frankfurt, Germany (Clouvider)",
@@ -64,18 +64,18 @@ class Speedtester(object):
         if not LIBRESPEED_CMD:
             self.file_logger.error("Librespeed-cli command does not appear to be installed, unable to perform test.")
             return False
-        
+
         # define command to run
         cmd = "{} --json".format(LIBRESPEED_CMD)
 
         if server_id:
             cmd += " --server {}".format(server_id)
-        
+
         if args:
             cmd += " {}".format(args)
 
         self.file_logger.debug("Librespeed command: {}".format(cmd))
-        
+
         # run librespeed command
         try:
             speedtest_info = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True).decode()
@@ -99,7 +99,7 @@ class Speedtester(object):
         if not results_dict:
             self.file_logger.error("JSON decode of librespeed results failed - returning error")
             return False
-        
+
         test_time = get_timestamp(self.config_vars)
         download_rate_mbps = round(float(results_dict['download']), 2)
         upload_rate_mbps = round(float(results_dict['upload']), 2)
@@ -116,14 +116,14 @@ class Speedtester(object):
 mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'.format(
             test_time, ping_time, download_rate_mbps, upload_rate_mbps, server_name, mbytes_sent, mbytes_received, latency_ms, jitter_ms, client_ip, provider))
 
-        return {'time': test_time, 'ping_time': ping_time, 'download_rate_mbps': download_rate_mbps, 'upload_rate_mbps': upload_rate_mbps, 
-            'server_name': server_name, 'mbytes_sent': mbytes_sent, 'mbytes_received': mbytes_received, 'latency_ms': latency_ms, 
+        return {'time': test_time, 'ping_time': ping_time, 'download_rate_mbps': download_rate_mbps, 'upload_rate_mbps': upload_rate_mbps,
+            'server_name': server_name, 'mbytes_sent': mbytes_sent, 'mbytes_received': mbytes_received, 'latency_ms': latency_ms,
             'jitter_ms': jitter_ms, 'client_ip': client_ip, 'provider': provider}
 
     def ooklaspeedtest(self, server_id='', DEBUG=False):
         '''
         This function runs the ookla speedtest and returns the result
-        as a dictionary: 
+        as a dictionary:
             {   download_rate_mbps = download_rate_mbps (float)
                 upload_rate_mbps = upload_rate_mbps (float)
                 ping_time = ping_time (int)
@@ -133,39 +133,39 @@ mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'
                 latency_ms = latency_ms (same as ping_time value - float)
                 jitter_ms = jitter (int)
             }
-        
+
         Speedtest results format (Ookla):
         {
-            'download': 29471546.96131429, 
-            'upload': 10066173.96792112, 
-            'ping': 34.035, 
+            'download': 29471546.96131429,
+            'upload': 10066173.96792112,
+            'ping': 34.035,
             'server': {
-                'url': 'http://speedtest-net5.rapidswitch.co.uk:8080/speedtest/upload.php', 
-                'lat': '52.6369', 
-                'lon': '-1.1398', 
-                'name': 'Leicester', 
-                'country': 'United Kingdom', 
-                'cc': 'GB', 
-                'sponsor': 'Iomart', 
-                'id': '29080', 
-                'host': 'speedtest-net5.rapidswitch.co.uk:8080', 
-                'd': 68.38417645961746, 
+                'url': 'http://speedtest-net5.rapidswitch.co.uk:8080/speedtest/upload.php',
+                'lat': '52.6369',
+                'lon': '-1.1398',
+                'name': 'Leicester',
+                'country': 'United Kingdom',
+                'cc': 'GB',
+                'sponsor': 'Iomart',
+                'id': '29080',
+                'host': 'speedtest-net5.rapidswitch.co.uk:8080',
+                'd': 68.38417645961746,
                 'latency': 34.035
-            }, 
-            'timestamp': '2020-12-29T06:45:22.334398Z', 
-            'bytes_sent': 13393920, 
-            'bytes_received': 37314032, 
-            'share': None, 
+            },
+            'timestamp': '2020-12-29T06:45:22.334398Z',
+            'bytes_sent': 13393920,
+            'bytes_received': 37314032,
+            'share': None,
             'client': {
-                'ip': '81.111.152.68', 
-                'lat': '52.8052', 
-                'lon': '-2.1164', 
-                'isp': 'Virgin Media', 
-                'isprating': '3.7', 
-                'rating': '0', 
-                'ispdlavg': '0', 
-                'ispulavg': '0', 
-                'loggedin': '0', 
+                'ip': '81.111.152.68',
+                'lat': '52.8052',
+                'lon': '-2.1164',
+                'isp': 'Virgin Media',
+                'isprating': '3.7',
+                'rating': '0',
+                'ispdlavg': '0',
+                'ispulavg': '0',
+                'loggedin': '0',
                 'country': 'GB'
             }
         }
@@ -258,7 +258,7 @@ mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'
 mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'.format(
             test_time, ping_time, download_rate_mbps, upload_rate_mbps, server_name, mbytes_sent, mbytes_received, latency_ms, jitter_ms, client_ip, provider))
 
-        return {'time': test_time, 'ping_time': ping_time, 'download_rate_mbps': download_rate_mbps, 'upload_rate_mbps': upload_rate_mbps, 'server_name': server_name, 
+        return {'time': test_time, 'ping_time': ping_time, 'download_rate_mbps': download_rate_mbps, 'upload_rate_mbps': upload_rate_mbps, 'server_name': server_name,
             'mbytes_sent': mbytes_sent, 'mbytes_received': mbytes_received, 'latency_ms': latency_ms, 'jitter_ms': jitter_ms, 'client_ip': client_ip,
             'provider': provider}
 
@@ -278,7 +278,7 @@ mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'
             if config_vars['provider'] == 'ookla':
                 self.file_logger.debug("Running Ookla speedtest.")
                 speedtest_results = self.ooklaspeedtest(config_vars['server_id'])
-                
+
             elif config_vars['provider'] == 'librespeed':
                 self.file_logger.debug("Running Librespeed speedtest.")
                 speedtest_results = self.librespeed(server_id=config_vars['server_id'], args=config_vars['librespeed_args'])
@@ -315,3 +315,12 @@ mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'
             config_vars['test_issue'] = True
             config_vars['test_issue_descr'] = "Speedtest test failure"
             return False
+
+    @staticmethod
+    def get_tag_keys():
+        ''' Values to treat as tags in Influx '''
+        return (
+            'server_name',
+            'client_ip',
+            'provider',
+        )

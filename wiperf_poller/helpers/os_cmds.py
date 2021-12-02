@@ -18,12 +18,12 @@ def _find_cmd(cmd):
         command_name = cmd.split('/')[-1]
         found_cmd = shutil.which(command_name)
 
-        if not found_cmd:     
+        if not found_cmd:
             return False
         else:
             # re-write cmd path
             return found_cmd
-    
+
     return cmd
 
 # define mandatory OS commands (attempt to find in path if not in hardcoded path)
@@ -85,20 +85,19 @@ def check_os_cmds(file_logger):
 
     # emit warning msg for missing optional commands
     file_logger.info("Checking optional OS commands are available.")
-    
+
     for cmd_name in OS_OPT_CMDS.keys():
 
-        if not OS_OPT_CMDS[cmd_name]:     
+        if not OS_OPT_CMDS[cmd_name]:
             file_logger.warning("Unable to find optional OS command: {} (Some functionality may not be available)".format(cmd_name))
-    
+
     # return failure for missing core command
     file_logger.info("Checking required OS commands are available.")
 
     for cmd_name in OS_CORE_CMDS.keys():
 
-        if not OS_CORE_CMDS[cmd_name]:     
+        if not OS_CORE_CMDS[cmd_name]:
             file_logger.error("Unable to find required OS command: {}".format(cmd_name))
             return False
-    
-    return True
 
+    return True

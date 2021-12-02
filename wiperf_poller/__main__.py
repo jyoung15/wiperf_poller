@@ -126,7 +126,7 @@ def main():
     # to pull the config
     file_logger.info("Checking if we use remote cfg file...")
     if config_vars['cfg_url']:
-        
+
         # if able to get cfg file, re-read params in case updated
         if check_last_cfg_read(config_file, check_cfg_file, config_vars, file_logger):
             config_vars = read_local_config(config_file, file_logger)
@@ -175,7 +175,7 @@ def main():
     poll_obj = PollStatus(config_vars, file_logger)
     poll_obj.probe_mode(probe_mode)
     poll_obj.mgt_if(config_vars['mgt_if'])
-    
+
     #############################################
     # Run network checks
     #############################################
@@ -191,10 +191,10 @@ def main():
     else:
         file_logger.info("Checking wireless connection is good...(layer 1 &2)")
         connection_obj = WirelessConnectionTester(file_logger, wlan_if, platform)
-    
+
     connection_obj.run_tests(watchdog_obj, lockf_obj, config_vars, exporter_obj)
-    poll_obj.network('OK') 
-    
+    poll_obj.network('OK')
+
     # update poll summary with IP
     poll_obj.ip(adapter_obj.get_adapter_ip())
 
@@ -207,13 +207,13 @@ def main():
         # clear out old spooled files if required
         spooler_obj.prune_old_files()
 
-        # if export method not spooler, mgt connect 
-        # must be OK. Empty spool queue 
+        # if export method not spooler, mgt connect
+        # must be OK. Empty spool queue
         if config_vars['exporter_type'] != 'spooler':
 
             # check we have spooler dir
             if spooler_obj.check_spool_dir_exists():
-                
+
                 # check number of files in spooler dir
                 file_list = spooler_obj.list_spool_files()
 
@@ -232,7 +232,7 @@ def main():
                         except IOError as err:
                             file_logger.error("JSON I/O file read error: {}".format(err))
                             break
-                        
+
                         for results_dict in results_list:
 
                             # pull out the data source
@@ -248,14 +248,14 @@ def main():
                             # remove data file
                             os.remove(full_file_name)
                             file_logger.info("Spooled results sent OK - {}".format(data_file))
-                        
-    
+
+
     else:
         file_logger.info("Spooler not enabled.")
 
     #############################################
     # Run speedtest (if enabled)
-    #############################################                                                                                                                                                                                                                      
+    #############################################
 
     file_logger.info("########## speedtest ##########")
     if config_vars['speedtest_enabled'] == 'yes':
@@ -339,7 +339,7 @@ def main():
         else:
             file_logger.info("HTTP test not enabled in config file, bypassing this test...")
             poll_obj.http('Not enabled')
-    
+
     ###################################
     # Run iperf3 tcp test (if enabled)
     ###################################
@@ -452,7 +452,7 @@ def main():
     #####################################
     # Tidy up before exit
     #####################################
-  
+
     # dump poller status info
     if config_vars['poller_reporting_enabled'] == 'yes':
         poll_obj.dump(exporter_obj)

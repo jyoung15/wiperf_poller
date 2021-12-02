@@ -1,5 +1,5 @@
 """
-Read in config.ini file and return in a dictionary 
+Read in config.ini file and return in a dictionary
 
 Returns:
     dict -- All wiperf config params
@@ -10,7 +10,7 @@ import sys
 
 def read_local_config(config_file, file_logger):
     '''
-    Read in and return all config file variables. 
+    Read in and return all config file variables.
     '''
     config_vars = {}
 
@@ -21,7 +21,7 @@ def read_local_config(config_file, file_logger):
 
     # create parser
     config = configparser.ConfigParser()
-    config.read(config_file)   
+    config.read(config_file)
 
     # TODO: add checking logic for values in config.ini file
 
@@ -39,7 +39,7 @@ def read_local_config(config_file, file_logger):
     config_vars['platform'] = 'rpi'
     if os.path.exists("/etc/wlanpi-state"):
         config_vars['platform'] = 'wlanpi'
-    
+
     # data exporter type for results
     config_vars['exporter_type'] = gen_sect.get('exporter_type', 'splunk')
     config_vars['time_format'] = gen_sect.get('exporter_type', 'splunk')
@@ -67,7 +67,7 @@ def read_local_config(config_file, file_logger):
     config_vars['error_messages_enabled'] = gen_sect.get('error_messages_enabled', 'yes')
     # max number of messages per poll
     config_vars['error_messages_limit'] = gen_sect.get('error_messages_limit', 5)
-    
+
 
     ####### Splunk config ########
     # data transport
@@ -149,7 +149,7 @@ def read_local_config(config_file, file_logger):
             print(err_msg)
             sys.exit()
     """
-    
+
     # Get network test config params
     network_sect = config['Network_Test']
     config_vars['network_data_file'] = network_sect.get('networkd', 'wiperf-network')
@@ -248,14 +248,14 @@ def read_local_config(config_file, file_logger):
     config_vars['smb_global_username'] = smb_sect.get('smb_global_username', ' ')
     config_vars['smb_global_password'] = smb_sect.get('smb_global_password', ' ')
 
-    # get specifed number of targets 
-    # format: 
+    # get specifed number of targets
+    # format:
     #   config_vars['smb_host1'] = smb_sect.get('smb_host1', '')
     #   config_vars['smb_username1'] = smb_sect.get('smb_username1', ' ')
     #   config_vars['smb_password1'] = smb_sect.get('smb_password1', ' ')
     #   config_vars['smb_path1'] = smb_sect.get('smb_path1', '')
     #   config_vars['smb_filename1'] = smb_sect.get('smb_filename1','')
-    
+
     num_smb_targets = int(config_vars['smb_targets_count']) + 1
 
     for target_num in range(1, num_smb_targets):

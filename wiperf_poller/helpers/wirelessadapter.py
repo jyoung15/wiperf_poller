@@ -481,7 +481,7 @@ class WirelessAdapter(object):
             error_descr = "i/f down command appears to have failed. Error: {} (signalling error)".format(str(output))
             self.file_logger.error(error_descr)
             return False
-        
+
         # allow interface time to completely drop, release dhcp etc.
         time.sleep(10)
 
@@ -496,7 +496,7 @@ class WirelessAdapter(object):
 
         self.file_logger.info("Interface bounce completed OK.")
         return True
-    
+
     def bounce_error_exit(self, lockf_obj):
         '''
         Log an error before bouncing the wlan interface and then exiting as we have an unrecoverable error with the network connection
