@@ -1,4 +1,4 @@
-from socket import gethostbyname
+from socket import gethostbyname_ex
 import subprocess
 import re
 import sys
@@ -21,17 +21,19 @@ def is_ipv6(ip_address):
 def resolve_name(hostname, file_logger):
     """
     if hostname passed, DNS lookup, otherwise, return unchanged IP address
+    always returns a list (empty if error)
     """
     if is_ipv4(hostname) or is_ipv6(hostname):
-        return hostname
+        return [hostname]
 
     try:
-        ip_address = gethostbyname(hostname)
-        file_logger.info("  DNS hostname lookup : {}. Result: {}".format(hostname, ip_address))
-        return ip_address
+        # hostname might return multiple IPs (DNS load-balancing, etc)
+        ip_addresses = gethostbyname_ex(hostname)[2]
+        file_logger.info("  DNS hostname lookup : {}. Result: {}".format(hostname, ip_addresses))
+        return ip_addresses
     except Exception as ex:
         file_logger.error("  Issue looking up host {} (DNS Issue?): {}".format(hostname, ex))
-        return False
+        return []
 
 
 def get_test_traffic_interface(config_vars, file_logger):
@@ -52,19 +54,23 @@ def get_first_ipv4_route_to_dest(ip_address, file_logger, ip_ver=''):
     Check the routes to a specific ip destination & return first entry
     """
 
-    ip_address = resolve_name(ip_address, file_logger)
+    ip_addresses = resolve_name(ip_address, file_logger)
 
-    # get specific route details of path that will be used by kernel (cannot be used to modify routing entry)
-    ip_route_cmd = "{} {} route get ".format(IP_CMD, ip_ver) + ip_address + " | head -n 1"
+    return_val = []
+    for ip_address in ip_addresses:
 
-    try:
-        route_detail = subprocess.check_output(ip_route_cmd, stderr=subprocess.STDOUT, shell=True).decode()
-        file_logger.info("  Checked interface route to : {}. Result: {}".format(ip_address, route_detail.strip()))
-        return route_detail.strip()
-    except subprocess.CalledProcessError as exc:
-        output = exc.output.decode()
-        file_logger.error("  Issue looking up route (route cmd syntax?): {} (command used: {})".format(str(output), ip_route_cmd))
-        return ''
+        # get specific route details of path that will be used by kernel (cannot be used to modify routing entry)
+        ip_route_cmd = "{} {} route get ".format(IP_CMD, ip_ver) + ip_address + " | head -n 1"
+
+        try:
+            route_detail = subprocess.check_output(ip_route_cmd, stderr=subprocess.STDOUT, shell=True).decode()
+            file_logger.info("  Checked interface route to : {}. Result: {}".format(ip_address, route_detail.strip()))
+            return_val.append(route_detail.strip())
+        except subprocess.CalledProcessError as exc:
+            output = exc.output.decode()
+            file_logger.error("  Issue looking up route (route cmd syntax?): {} (command used: {})".format(str(output), ip_route_cmd))
+            return []
+    return return_val
 
 def get_first_ipv6_route_to_dest(ip_address, file_logger):
     """
@@ -75,19 +81,23 @@ def get_first_ipv6_route_to_dest(ip_address, file_logger):
 
 def get_route_used_to_dest(ip_address, file_logger):
 
-    ip_address = resolve_name(ip_address, file_logger)
+    ip_addresses = resolve_name(ip_address, file_logger)
 
-    # get first raw routing entry, otherwise show route that will actually be chosen by kernel
-    ip_route_cmd = "{} route show to match ".format(IP_CMD) + ip_address + " | head -n 1"
+    return_val = []
+    for ip_address in ip_addresses:
 
-    try:
-        route_detail = subprocess.check_output(ip_route_cmd, stderr=subprocess.STDOUT, shell=True).decode()
-        file_logger.info("  Checked interface route to : {}. Result: {}".format(ip_address, route_detail.strip()))
-        return route_detail.strip()
-    except subprocess.CalledProcessError as exc:
-        output = exc.output.decode()
-        file_logger.error("  Issue looking up route (route cmd syntax?): {} (command used: {})".format(str(output), ip_route_cmd))
-        return ''
+        # get first raw routing entry, otherwise show route that will actually be chosen by kernel
+        ip_route_cmd = "{} route show to match ".format(IP_CMD) + ip_address + " | head -n 1"
+
+        try:
+            route_detail = subprocess.check_output(ip_route_cmd, stderr=subprocess.STDOUT, shell=True).decode()
+            file_logger.info("  Checked interface route to : {}. Result: {}".format(ip_address, route_detail.strip()))
+            return_val.append(route_detail.strip())
+        except subprocess.CalledProcessError as exc:
+            output = exc.output.decode()
+            file_logger.error("  Issue looking up route (route cmd syntax?): {} (command used: {})".format(str(output), ip_route_cmd))
+            return []
+    return return_val
 
 
 def check_correct_ipv4_mgt_interface(mgt_ip, mgt_interface, file_logger):
@@ -95,14 +105,18 @@ def check_correct_ipv4_mgt_interface(mgt_ip, mgt_interface, file_logger):
     Check that the correct interface is being used for mgt traffic for a specific IP v4 target
     """
     file_logger.info("  Checking we will send mgt traffic over configured interface '{}' mode.".format(mgt_interface))
-    route_to_dest = get_first_ipv4_route_to_dest(mgt_ip, file_logger)
+    routes_to_dest = get_first_ipv4_route_to_dest(mgt_ip, file_logger)
 
-    if mgt_interface in route_to_dest:
-        file_logger.info("  Mgt interface route looks good.")
-        return True
-    else:
-        file_logger.info("  Mgt interface will be routed over wrong interface: {}".format(route_to_dest))
-        return False
+    return_val = True
+    for route_to_dest in routes_to_dest:
+
+        if mgt_interface in route_to_dest:
+            file_logger.info("  Mgt interface route looks good.")
+            return_val &= True
+        else:
+            file_logger.info("  Mgt interface will be routed over wrong interface: {}".format(route_to_dest))
+            return_val &= False
+    return return_val
 
 
 def check_correct_ipv6_mgt_interface(mgt_ip, mgt_interface, file_logger):
@@ -118,13 +132,19 @@ def check_correct_mgt_interface(mgt_host, mgt_interface, file_logger):
     """
 
     # figure out mgt_ip (in case hostname passed)
-    mgt_ip = resolve_name(mgt_host, file_logger)
+    mgt_ips = resolve_name(mgt_host, file_logger)
 
-    if is_ipv4(mgt_ip): return check_correct_ipv4_mgt_interface(mgt_ip, mgt_interface, file_logger)
-    if is_ipv6(mgt_ip): return check_correct_ipv6_mgt_interface(mgt_ip, mgt_interface, file_logger)
+    return_val = True
+    for mgt_ip in mgt_ips:
 
-    file_logger.error("  Unknown mgt IP address format '{}' mode.".format(mgt_ip))
-    return False
+        if is_ipv4(mgt_ip):
+            return_val &= check_correct_ipv4_mgt_interface(mgt_ip, mgt_interface, file_logger)
+        elif is_ipv6(mgt_ip):
+            return_val &= check_correct_ipv6_mgt_interface(mgt_ip, mgt_interface, file_logger)
+        else:
+            file_logger.error("  Unknown mgt IP address format '{}' mode.".format(mgt_ip))
+    return return_val
+
 
 
 def check_correct_mode_interface(ip_address, config_vars, file_logger):
@@ -146,12 +166,16 @@ def check_correct_mode_interface(ip_address, config_vars, file_logger):
     test_traffic_interface= get_test_traffic_interface(config_vars, file_logger)
 
     # get i/f name for route
-    route_to_dest = get_first_ipv4_route_to_dest(ip_address, file_logger)
+    routes_to_dest = get_first_ipv4_route_to_dest(ip_address, file_logger)
 
-    if test_traffic_interface in route_to_dest:
-        return True
-    else:
-        return False
+    return_val = True
+    for route_to_dest in routes_to_dest:
+
+        if test_traffic_interface in route_to_dest:
+            return_val &= True
+        else:
+            return_val &= False
+    return return_val
 
 
 def inject_default_route(ip_address, config_vars, file_logger):
@@ -181,51 +205,59 @@ def inject_default_route(ip_address, config_vars, file_logger):
     """
 
     # get the default route to our destination
-    route_to_dest = get_route_used_to_dest(ip_address, file_logger)
+    routes_to_dest = get_route_used_to_dest(ip_address, file_logger)
 
-    # This fix relies on the retrieved route being a default route in the
-    # format: default via 192.168.0.1 dev eth0
+    return_val = True
+    for route_to_dest in routes_to_dest:
 
-    if not "default" in route_to_dest:
-        # this isn't a default route, so we can't fix this
-        file_logger.error('  [Route Injection] Route is not a default route entry...cannot resove this routing issue: {}'.format(route_to_dest))
-        return False
+        # This fix relies on the retrieved route being a default route in the
+        # format: default via 192.168.0.1 dev eth0
 
-    # delete and re-add route with a new metric
-    try:
-        del_route_cmd = "{} route del ".format(IP_CMD) + route_to_dest
-        subprocess.run(del_route_cmd, shell=True)
-        file_logger.info("  [Route Injection] Deleting route: {}".format(route_to_dest))
-    except subprocess.CalledProcessError as proc_exc:
-        file_logger.error('  [Route Injection] Route deletion failed!: {}'.format(proc_exc))
-        return False
+        if not "default" in route_to_dest:
+            # this isn't a default route, so we can't fix this
+            file_logger.error('  [Route Injection] Route is not a default route entry...cannot resove this routing issue: {}'.format(route_to_dest))
+            return_val &= False
+            continue
 
-    try:
-        modified_route = route_to_dest + " metric 500"
-        add_route_cmd = "{} route add  ".format(IP_CMD) + modified_route
-        subprocess.run(add_route_cmd, shell=True)
-        file_logger.info("  [Route Injection] Re-adding deleted route with new metric: {}".format(modified_route))
-    except subprocess.CalledProcessError as proc_exc:
-        file_logger.error('  [Route Injection] Route addition failed!')
-        return False
+        # delete and re-add route with a new metric
+        try:
+            del_route_cmd = "{} route del ".format(IP_CMD) + route_to_dest
+            subprocess.run(del_route_cmd, shell=True)
+            file_logger.info("  [Route Injection] Deleting route: {}".format(route_to_dest))
+        except subprocess.CalledProcessError as proc_exc:
+            file_logger.error('  [Route Injection] Route deletion failed!: {}'.format(proc_exc))
+            return_val &= False
+            continue
 
-    # figure out what our required interface is for testing traffic
-    probe_mode = config_vars['probe_mode']
-    file_logger.info("  [Route Injection] Checking probe mode: '{}' ".format(probe_mode))
-    test_traffic_interface= get_test_traffic_interface(config_vars, file_logger)
+        try:
+            modified_route = route_to_dest + " metric 500"
+            add_route_cmd = "{} route replace  ".format(IP_CMD) + modified_route
+            subprocess.run(add_route_cmd, shell=True)
+            file_logger.info("  [Route Injection] Re-adding deleted route with new metric: {}".format(modified_route))
+        except subprocess.CalledProcessError as proc_exc:
+            file_logger.error('  [Route Injection] Route addition failed!')
+            return_val &= False
+            continue
 
-    # inject a new route with the required interface
-    try:
-        new_route = "default dev {}".format(test_traffic_interface)
-        add_route_cmd = "{} route add  ".format(IP_CMD) + new_route
-        subprocess.run(add_route_cmd, shell=True)
-        file_logger.info("  [Route Injection] Adding new route: {}".format(new_route))
-    except subprocess.CalledProcessError as proc_exc:
-        file_logger.error('  [Route Injection] Route addition failed!')
-        return False
+        # figure out what our required interface is for testing traffic
+        probe_mode = config_vars['probe_mode']
+        file_logger.info("  [Route Injection] Checking probe mode: '{}' ".format(probe_mode))
+        test_traffic_interface= get_test_traffic_interface(config_vars, file_logger)
 
-    file_logger.info("  [Route Injection] Route injection complete")
-    return True
+        # inject a new route with the required interface
+        try:
+            new_route = "default dev {}".format(test_traffic_interface)
+            add_route_cmd = "{} route replace  ".format(IP_CMD) + new_route
+            subprocess.run(add_route_cmd, shell=True)
+            file_logger.info("  [Route Injection] Adding new route: {}".format(new_route))
+        except subprocess.CalledProcessError as proc_exc:
+            file_logger.error('  [Route Injection] Route addition failed!')
+            return_val &= False
+            continue
+
+        file_logger.info("  [Route Injection] Route injection complete")
+        return_val &= True
+    return return_val
 
 
 def _inject_static_route(ip_address, req_interface, traffic_type, file_logger, ip_ver=""):
@@ -241,8 +273,17 @@ def _inject_static_route(ip_address, req_interface, traffic_type, file_logger, i
 
     file_logger.info("  [Route Injection] Attempting static route insertion to fix routing issue")
     try:
-        new_route = "{} dev {}".format(ip_address, req_interface)
-        add_route_cmd = "{} {} route add  ".format(IP_CMD, ip_ver) + new_route
+        gateway_check_cmd = '{} route list exact default dev {}'.format(IP_CMD, req_interface)
+        gateway_line = subprocess.check_output(gateway_check_cmd, stderr=subprocess.STDOUT, shell=True).decode().strip()
+        file_logger.debug("  [Route Injection] checking for default gateway IP: {}".format(gateway_line))
+        if match := re.search(r'^default via (?P<gw>\d+\.\d+\.\d+\.\d+)', gateway_line):
+            default_gw = match['gw']
+            file_logger.debug('  [Route Injection] default gateway IP found: {}'.format(default_gw))
+            new_route = "{} via {} dev {}".format(ip_address, default_gw, req_interface)
+        else:
+            new_route = "{} dev {}".format(ip_address, req_interface)
+        add_route_cmd = "{} {} route replace  ".format(IP_CMD, ip_ver) + new_route
+        file_logger.debug("  [Route Injection] {}".format(add_route_cmd))
         subprocess.run(add_route_cmd, shell=True)
         file_logger.info("  [Route Injection] Adding new {} traffic route: {}".format(traffic_type, new_route))
     except subprocess.CalledProcessError as proc_exc:
@@ -264,12 +305,19 @@ def inject_mgt_static_route(ip_address, config_vars, file_logger):
     """
     Inject a static route to correct routing issue for mgt traffic
     """
-    mgt_interface = config_vars['mgt_if']
+    # figure out mgt_ip (in case hostname passed)
+    mgt_ips = resolve_name(ip_address, file_logger)
 
-    if is_ipv6(ip_address):
-        return _inject_ipv6_static_route(ip_address, mgt_interface, "mgt", file_logger)
+    return_val = True
+    for mgt_ip in mgt_ips:
 
-    return _inject_static_route(ip_address, mgt_interface, "mgt", file_logger)
+        mgt_interface = config_vars['mgt_if']
+
+        if is_ipv6(mgt_ip):
+            return_val &= _inject_ipv6_static_route(mgt_ip, mgt_interface, "mgt", file_logger)
+        else:
+            return_val &= _inject_static_route(mgt_ip, mgt_interface, "mgt", file_logger)
+    return return_val
 
 
 def inject_test_traffic_static_route(ip_address, config_vars, file_logger):
