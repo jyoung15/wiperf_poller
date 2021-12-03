@@ -16,7 +16,7 @@ def FileLogger(log_file, error_log_file):
     logger = logging.getLogger("Probe_Log")
     logger.setLevel(level=logging.INFO)
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(process)d - %(levelname)s - %(message)s')
 
     # add a rotating handler
     rot_handler = RotatingFileHandler(log_file, maxBytes=521000, backupCount=10)

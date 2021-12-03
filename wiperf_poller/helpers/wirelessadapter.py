@@ -482,6 +482,15 @@ class WirelessAdapter(object):
             self.file_logger.error(error_descr)
             return False
 
+        try:
+            self.file_logger.warning("Killing wpa_supplicant...")
+            subprocess.check_output('pkill -9 -x wpa_supplicant', stderr=subprocess.STDOUT, shell=True).decode()
+        except subprocess.CalledProcessError as exc:
+            output = exc.output.decode()
+            error_descr = "pkill command appears to have failed. Error: {}".format(str(output))
+            self.file_logger.error(error_descr)
+            return False
+
         # allow interface time to completely drop, release dhcp etc.
         time.sleep(10)
 

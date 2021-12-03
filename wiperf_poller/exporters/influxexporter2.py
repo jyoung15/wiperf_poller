@@ -29,7 +29,7 @@ def influxexporter2(localhost, url, token, bucket, org, dict_data, source, file_
         file_logger.error(import_err)
         sys.exit()
 
-    client = InfluxDBClient(url=url, token=token, org=org, timeout=100)
+    client = InfluxDBClient(url=url, token=token, org=org, timeout=5000)
     file_logger.debug("Creating InfluxDB2 API client...")
     file_logger.debug("URL: -{}-".format(url))
     file_logger.debug("Token: -{}-".format(token))
@@ -44,7 +44,8 @@ def influxexporter2(localhost, url, token, bucket, org, dict_data, source, file_
     now = time_lookup()
 
     # construct data structure to send to InFlux
-    del dict_data["time"]
+    dict_data.pop("time", None)
+
     # this partitions dict_data into two dicts based on tag_keys
     tags, fields = reduce(
         lambda d, i: (d[0] | {i[0]: i[1]}, d[1]) if i[0] in tag_keys else (d[0], d[1] | {i[0]: i[1]}),

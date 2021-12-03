@@ -7,8 +7,9 @@ Returns:
 import configparser
 import os
 import sys
+import logging
 
-def read_local_config(config_file, file_logger):
+def read_local_config(config_file):
     '''
     Read in and return all config file variables.
     '''
@@ -16,7 +17,7 @@ def read_local_config(config_file, file_logger):
 
     #check config file exists
     if not os.path.exists(config_file):
-        file_logger.error("Cannot find config file: {} (exiting)".format(config_file))
+        logging.error("Cannot find config file: {} (exiting)".format(config_file))
         sys.exit()
 
     # create parser

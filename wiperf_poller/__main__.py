@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import time
+import fcntl
 
 # our local modules
 from wiperf_poller.testers.dhcptester import DhcpTester
@@ -40,6 +41,7 @@ from wiperf_poller.exporters.spoolexporter import SpoolExporter
 config_file = "/etc/wiperf/config.ini"
 log_file = "/var/log/wiperf_agent.log"
 error_log_file = "/tmp/wiperf_err.log"
+debug_log_file = "/tmp/wiperf_debug.log"
 lock_file = '/tmp/wiperf_poller.lock'
 status_file = '/tmp/wiperf_status.txt'
 watchdog_file = '/tmp/wiperf_poller.watchdog'
@@ -53,21 +55,30 @@ DEBUG = 0
 # File logger
 ###################################
 
-# set up our error_log file & initialize
-file_logger = FileLogger(log_file, error_log_file)
-file_logger.info("*****************************************************")
-file_logger.info(" Starting logging...")
-file_logger.info("*****************************************************")
-
 # Pull in our config.ini dict
-config_vars = read_local_config(config_file, file_logger)
+config_vars = read_local_config(config_file)
 
 # set logging to debug if debugging enabled
 if DEBUG or (config_vars['debug'] == 'on'):
     #rot_handler = file_logger.handlers[0]
     #rot_handler.setLevel(logging.DEBUG)
-    file_logger.setLevel(level=logging.DEBUG)
-    file_logger.info("(Note: logging set to debug level.)")
+    # file_logger.setLevel(level=logging.DEBUG)
+    # file_logger.info("(Note: logging set to debug level.)")
+    logging.basicConfig(
+        filename=debug_log_file,
+        format="%(asctime)s [%(levelname)s] %(process)d %(name)s: %(message)s",
+        datefmt="%F %T",
+        level=logging.DEBUG,
+        force=True,
+    )
+    file_logger = logging.getLogger('Probe_Log')
+else:
+    # set up our error_log file & initialize
+    file_logger = FileLogger(log_file, error_log_file)
+
+file_logger.info("*****************************************************")
+file_logger.info(" Starting logging...")
+file_logger.info("*****************************************************")
 
 # check we are running as root user (sudo)
 if os.geteuid() != 0:
@@ -79,8 +90,15 @@ if not check_os_cmds(file_logger):
     file_logger.error("Missing OS command....exiting.")
     sys.exit()
 
-# Lock file object
+# Lock file object (deprecated)
 lockf_obj = LockFile(lock_file, file_logger)
+
+# file will automatically be closed when process exits
+lock_file_fd = open(lock_file, 'w')
+file_logger.info("Attempting to acquire lock on {}".format(lock_file))
+# lock will automatically be release when process exits
+fcntl.flock(lock_file_fd, fcntl.LOCK_EX)  # this could hang indefinitely if lock holding process never exits
+file_logger.info("Acquired lock on {}".format(lock_file))
 
 # watchdog object
 watchdog_obj = Watchdog(watchdog_file, file_logger)
@@ -129,7 +147,7 @@ def main():
 
         # if able to get cfg file, re-read params in case updated
         if check_last_cfg_read(config_file, check_cfg_file, config_vars, file_logger):
-            config_vars = read_local_config(config_file, file_logger)
+            config_vars = read_local_config(config_file)
 
     else:
         file_logger.info("No remote cfg file confgured...using current local ini file.")
@@ -146,25 +164,25 @@ def main():
     ###################################
     # Check if script already running
     ###################################
-    if lockf_obj.lock_file_exists():
+    # if lockf_obj.lock_file_exists():
 
-        # read lock file contents & check how old timestamp is..
-        file_logger.error("Existing lock file found...")
-        watchdog_obj.inc_watchdog_count()
+    #     # read lock file contents & check how old timestamp is..
+    #     file_logger.error("Existing lock file found...")
+    #     watchdog_obj.inc_watchdog_count()
 
-        # if timestamp older than 10 mins, break lock
-        if lockf_obj.lock_is_old():
-            file_logger.error("Existing lock stale, breaking lock...")
-            lockf_obj.break_lock()
-        else:
-            # lock not old enough yet, respect lock & exit
-            file_logger.error("Exiting due to lock file indicating script running.")
-            file_logger.error("(Delete {} if you are sure script not running)".format(lock_file))
-            sys.exit()
-    else:
-        # create lockfile with current timestamp to stop 2nd process starting
-        file_logger.info("No lock file found. Creating lock file.")
-        lockf_obj.write_lock_file()
+    #     # if timestamp older than 10 mins, break lock
+    #     if lockf_obj.lock_is_old():
+    #         file_logger.error("Existing lock stale, breaking lock...")
+    #         lockf_obj.break_lock()
+    #     else:
+    #         # lock not old enough yet, respect lock & exit
+    #         file_logger.error("Exiting due to lock file indicating script running.")
+    #         file_logger.error("(Delete {} if you are sure script not running)".format(lock_file))
+    #         sys.exit()
+    # else:
+    #     # create lockfile with current timestamp to stop 2nd process starting
+    #     file_logger.info("No lock file found. Creating lock file.")
+    #     lockf_obj.write_lock_file()
 
     # test issue flag - set if any tests hit major issues
     # to stall further testing
@@ -464,7 +482,7 @@ def main():
 
     # get rid of lock file
     status_file_obj.write_status_file("")
-    lockf_obj.delete_lock_file()
+    # lockf_obj.delete_lock_file()
 
     file_logger.info("########## end ##########\n\n\n")
 
