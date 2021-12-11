@@ -8,6 +8,7 @@ import requests
 from requests.exceptions import HTTPError
 import urllib3
 from wiperf_poller.helpers.timefunc import get_timestamp
+from wiperf_poller.helpers.route import check_correct_mode_interface, inject_test_traffic_static_route, resolve_name
 
 class HttpTester(object):
     '''
@@ -62,8 +63,9 @@ class HttpTester(object):
             self.http_status_code = False
             self.http_get_duration = False
             self.http_server_response_time = False
-
-        self.file_logger.debug("http get for: {} : {}mS, server repsonse time: {}ms (code: {}).".format(http_target, self.http_get_duration, self.http_server_response_time, self.http_status_code))
+            self.file_logger.warning("http get for: {} failed (code: 0)".format(http_target))
+        else:
+            self.file_logger.debug("http get for: {} : {}mS, server repsonse time: {}ms (code: {}).".format(http_target, self.http_get_duration, self.http_server_response_time, self.http_status_code))
 
         # return status code & elapsed duration in mS
         return (self.http_status_code, self.http_get_duration, self.http_server_response_time)
@@ -99,14 +101,21 @@ class HttpTester(object):
 
             # check test will go over correct interface
             target_hostname = http_target.split('/')[2]
-            if check_correct_mode_interface(target_hostname, config_vars, self.file_logger):
-                pass
-            else:
-                self.file_logger.error(
-                    "Unable to test http to {} as route to destination not over correct interface...bypassing http tests".format(http_target))
-                # we will break here if we have an issue as something bad has happened...don't want to run more tests
-                config_vars['test_issue'] = True
-                tests_passed = False
+            try:
+                for target_ip in resolve_name(target_hostname, self.file_logger):
+                    if not check_correct_mode_interface(target_ip, config_vars, self.file_logger):
+                        self.file_logger.warning("  We are not using the interface required to perform our tests due to a routing issue in this unit - attempt route addition to fix issue")
+                        if not inject_test_traffic_static_route(target_ip, config_vars, self.file_logger):
+                            self.file_logger.error(
+                                "Unable to target {} as route to destination not over correct interface...attempting to correct".format(target_ip))
+                            # we will break here if we have an issue as something bad has happened...don't want to run more tests
+                            raise StopIteration
+                        if not check_correct_mode_interface(target_ip, config_vars, self.file_logger):
+                            self.file_logger.error(
+                                "Still unable to target {} as route to destination not over correct interface...bypassing target tests".format(target_ip))
+                            # we will break here if we have an issue as something bad has happened...don't want to run more tests
+                            raise StopIteration
+            except StopIteration:
                 break
 
             self.file_logger.info("Starting http test to : {}".format(http_target))

@@ -268,53 +268,57 @@ mbytes_received: {}, latency_ms: {}, jitter_ms: {}, client_ip: {}, provider: {}'
         self.file_logger.info("Starting speedtest ({})...".format(config_vars['provider']))
         status_file_obj.write_status_file("speedtest")
 
-        if check_correct_mode_interface('8.8.8.8', config_vars, self.file_logger):
+        # checking 8.8.8.8 is an invalid test since Ookla could use many different IPs for speedtest
+        # instead just assume the routing is correct
+        # the better solution is to split all tests into a separate PID running in its own network namespace
 
-            self.file_logger.info("Speedtest in progress....please wait.")
+        # if check_correct_mode_interface('8.8.8.8', config_vars, self.file_logger):
 
-            # speedtest returns false if there are any issues
-            speedtest_results = {}
+        self.file_logger.info("Speedtest in progress....please wait.")
 
-            if config_vars['provider'] == 'ookla':
-                self.file_logger.debug("Running Ookla speedtest.")
-                speedtest_results = self.ooklaspeedtest(config_vars['server_id'])
+        # speedtest returns false if there are any issues
+        speedtest_results = {}
 
-            elif config_vars['provider'] == 'librespeed':
-                self.file_logger.debug("Running Librespeed speedtest.")
-                speedtest_results = self.librespeed(server_id=config_vars['server_id'], args=config_vars['librespeed_args'])
+        if config_vars['provider'] == 'ookla':
+            self.file_logger.debug("Running Ookla speedtest.")
+            speedtest_results = self.ooklaspeedtest(config_vars['server_id'])
 
-            else:
-                self.file_logger.error("Unknown speedtest provider: {}".format(config_vars['provider']))
-                return False
+        elif config_vars['provider'] == 'librespeed':
+            self.file_logger.debug("Running Librespeed speedtest.")
+            speedtest_results = self.librespeed(server_id=config_vars['server_id'], args=config_vars['librespeed_args'])
 
-            if not speedtest_results == False:
-
-                self.file_logger.debug("Main: Speedtest results:")
-                self.file_logger.debug(speedtest_results)
-
-                # define column headers for CSV
-                column_headers = list(speedtest_results.keys())
-
-                self.file_logger.info("Speedtest ended.")
-
-                # dump the results
-                data_file = config_vars['speedtest_data_file']
-                test_name = "Speedtest"
-                if exporter_obj.send_results(config_vars, speedtest_results, column_headers, data_file, test_name, self.file_logger):
-                    self.file_logger.info("Speedtest results sent OK.")
-                    return True
-                else:
-                    self.file_logger.error("Error sending speedtest results. Exiting")
-                    lockf_obj.delete_lock_file()
-                    sys.exit()
-            else:
-                self.file_logger.error("Error running speedtest - check logs for info.")
-                return False
         else:
-            self.file_logger.error("Unable to run Speedtest as route to Internet not correct interface for more - we have a routing issue of some type.")
-            config_vars['test_issue'] = True
-            config_vars['test_issue_descr'] = "Speedtest test failure"
+            self.file_logger.error("Unknown speedtest provider: {}".format(config_vars['provider']))
             return False
+
+        if not speedtest_results == False:
+
+            self.file_logger.debug("Main: Speedtest results:")
+            self.file_logger.debug(speedtest_results)
+
+            # define column headers for CSV
+            column_headers = list(speedtest_results.keys())
+
+            self.file_logger.info("Speedtest ended.")
+
+            # dump the results
+            data_file = config_vars['speedtest_data_file']
+            test_name = "Speedtest"
+            if exporter_obj.send_results(config_vars, speedtest_results, column_headers, data_file, test_name, self.file_logger):
+                self.file_logger.info("Speedtest results sent OK.")
+                return True
+            else:
+                self.file_logger.error("Error sending speedtest results. Exiting")
+                lockf_obj.delete_lock_file()
+                sys.exit()
+        else:
+            self.file_logger.error("Error running speedtest - check logs for info.")
+            return False
+        # else:
+        #     self.file_logger.error("Unable to run Speedtest as route to Internet not correct interface for more - we have a routing issue of some type.")
+        #     config_vars['test_issue'] = True
+        #     config_vars['test_issue_descr'] = "Speedtest test failure"
+        #     return False
 
     @staticmethod
     def get_tag_keys():

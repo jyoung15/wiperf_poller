@@ -55,7 +55,7 @@ class EthernetConnectionTester(object):
 
         # Run a ping to seed arp cache
         ping_obj = PingTester(self.file_logger, platform=self.platform)
-        ping_obj.ping_host(config_vars['connectivity_lookup'], 1)
+        ping_obj.ping_host(config_vars['connectivity_lookup'], 2)
 
         try:
             gethostbyname(config_vars['connectivity_lookup'])
