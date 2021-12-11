@@ -9,6 +9,7 @@ import subprocess
 from sys import stderr
 from wiperf_poller.helpers.os_cmds import PING_CMD
 from wiperf_poller.helpers.timefunc import get_timestamp
+from wiperf_poller.helpers.route import check_correct_mode_interface, inject_test_traffic_static_route, resolve_name
 
 class PingTester(object):
     '''
@@ -170,15 +171,24 @@ class PingTester(object):
                     ping_host = adapter.get_def_gw()
 
                 # check tests will go over correct interface
-                if check_correct_mode_interface(ping_host, config_vars, self.file_logger):
-                    self.ping_host(ping_host, 1)
-                else:
-                    self.file_logger.error(
-                        "Unable to ping {} as route to destination not over correct interface...bypassing ping tests".format(ping_host))
-                    # we will break here if we have an issue as something bad has happened...don't want to run more tests
+                try:
+                    for ping_ip in resolve_name(ping_host, self.file_logger):
+                        if not check_correct_mode_interface(ping_ip, config_vars, self.file_logger):
+                            self.file_logger.warning("  We are not using the interface required to perform our tests due to a routing issue in this unit - attempt route addition to fix issue")
+                            if not inject_test_traffic_static_route(ping_ip, config_vars, self.file_logger):
+                                self.file_logger.error(
+                                    "Unable to ping {} as route to destination not over correct interface...attempting to correct".format(ping_ip))
+                                # we will break here if we have an issue as something bad has happened...don't want to run more tests
+                                raise StopIteration
+                            if not check_correct_mode_interface(ping_ip, config_vars, self.file_logger):
+                                self.file_logger.error(
+                                    "Still unable to ping {} as route to destination not over correct interface...bypassing ping tests".format(ping_ip))
+                                # we will break here if we have an issue as something bad has happened...don't want to run more tests
+                                raise StopIteration
+                    self.ping_host(ping_host, 2)
+                except StopIteration:
                     config_vars['test_issue'] = True
                     tests_passed = False
-                    break
 
         # run actual ping tests
         ping_index = 0
