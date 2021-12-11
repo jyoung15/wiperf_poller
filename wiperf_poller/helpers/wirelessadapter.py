@@ -21,7 +21,7 @@ class WirelessAdapter(object):
         self.bssid = ''  # str
         self.freq = 0.0  # float
         self.center_freq = 0.0  # float
-        self.channel = 0  # int
+        self.channel = 0  # Option[int]
         self.channel_width = 0  # int
         self.tx_bit_rate = 0.0  # float
         self.rx_bit_rate = 0.0  # float
@@ -94,7 +94,11 @@ class WirelessAdapter(object):
             '5.825': 165,
         }
 
-        return channels.get(freq, 'unknown')
+        if freq in channels:
+            return channels[freq]
+        else:
+            self.file_logger.error("unknown channel for {!r}".format(freq))
+            return None
 
     def iwconfig(self):
 

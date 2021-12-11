@@ -477,8 +477,9 @@ def main():
 
     # dump error messages
     if config_vars['error_messages_enabled'] == 'yes':
-        error_msg_obj = ErrorMessages(config_vars, error_log_file, file_logger)
-        error_msg_obj.dump(exporter_obj)
+        if not DEBUG and config_vars['debug'] != 'on':
+            error_msg_obj = ErrorMessages(config_vars, error_log_file, file_logger)
+            error_msg_obj.dump(exporter_obj)
 
     # get rid of lock file
     status_file_obj.write_status_file("")

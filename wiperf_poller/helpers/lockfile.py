@@ -62,10 +62,12 @@ class LockFile(object):
         self.write_lock_file()
 
     def delete_lock_file(self):
-        try:
-            os.remove(self.lock_file)
-            self.file_logger.info("removing lock file")
-            return True
-        except Exception as ex:
-            self.file_logger.error("Issue deleting lock file: {}, exiting...".format(ex))
-            sys.exit()
+        # NO-OP - keep lock file (flock method doesn't need file to be deleted)
+        pass
+        # try:
+        #     os.remove(self.lock_file)
+        #     self.file_logger.info("removing lock file")
+        #     return True
+        # except Exception as ex:
+        #     self.file_logger.error("Issue deleting lock file: {}, exiting...".format(ex))
+        #     sys.exit()
