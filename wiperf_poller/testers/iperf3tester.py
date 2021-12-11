@@ -28,7 +28,7 @@ class IperfTester(object):
         self.file_logger = file_logger
 
 
-    @timeout_decorator.timeout(60, use_signals=False)
+    @timeout_decorator.timeout(30, use_signals=False)
     def tcp_iperf_client_test(self, server_hostname, duration=10, port=5201, debug=False):
 
         result= ''
@@ -82,7 +82,7 @@ class IperfTester(object):
 
         return mos_score
 
-    @timeout_decorator.timeout(60, use_signals=False)
+    @timeout_decorator.timeout(30, use_signals=False)
     def udp_iperf_client_test(self, server_hostname, duration=10, port=5201, bandwidth=10000000, debug=False):
 
         iperf_client = Client()

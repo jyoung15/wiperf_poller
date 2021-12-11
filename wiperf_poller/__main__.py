@@ -60,16 +60,18 @@ config_vars = read_local_config(config_file)
 
 # set logging to debug if debugging enabled
 if DEBUG or (config_vars['debug'] == 'on'):
-    #rot_handler = file_logger.handlers[0]
-    #rot_handler.setLevel(logging.DEBUG)
-    # file_logger.setLevel(level=logging.DEBUG)
-    # file_logger.info("(Note: logging set to debug level.)")
+    log_handler = logging.handlers.TimedRotatingFileHandler(
+        debug_log_file,
+        when='H',
+        interval=4,
+        backupCount=6,
+    )
     logging.basicConfig(
-        filename=debug_log_file,
-        format="%(asctime)s [%(levelname)s] %(process)d %(name)s: %(message)s",
+        format="%(asctime)s [%(levelname)-8s] %(process)5d %(name)s %(module)-25s: %(message)s",
         datefmt="%F %T",
         level=logging.DEBUG,
         force=True,
+        handlers=[log_handler],
     )
     file_logger = logging.getLogger('Probe_Log')
 else:
